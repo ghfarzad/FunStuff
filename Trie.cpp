@@ -81,42 +81,6 @@ struct Node
         return ret;
     }
 
-    vector<string> Find1(const string& s) {
-        auto node = shared_from_this();
-        auto i = 0;
-        while (node->edges[(int)(s[i])]) {
-            node = node->children[s[i]];
-            ++i;
-        }
-
-        auto ret = vector<string>();
-        auto node_stack = stack<shared_ptr<Node>>();
-        node_stack.push(node);
-
-        auto process_node = [&](shared_ptr<Node> node) {
-            if (node->IsLeaf()) {
-                ret.push_back(node->value);
-            } else {
-                node_stack.push(node);
-            }
-        };
-
-        while (!node_stack.empty()) {
-            auto top = node_stack.top();
-            node_stack.pop();
-
-            if (top->is_full_entry) {
-                ret.push_back(top->value);
-            }
-
-            for (auto itr = top->children.begin(); itr != top->children.end(); ++itr) {
-                process_node(itr->second);
-            }
-        }
-
-        return ret;
-    }
-
     bool IsLeaf() {
         return edges.none();
     }
@@ -137,11 +101,7 @@ struct Node
     string GetEdgeString() {
         auto tmp = edges.to_string();
         string edges_s;
-        for (auto i = 0; i < tmp.size(); ++i) {
-          if (tmp[i] == '1') {
-              edges_s += char(127 - i);
-          }
-        }
+        for (auto i = 0; i < tmp.size(); ++i)
         return edges_s;;
     }
 
