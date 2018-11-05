@@ -18,8 +18,6 @@ struct Node
     Node(const string& s) : value(s) {}
 
     void Add(const string& s) {
-        cout << "Add(" << s << ")" << endl;
-
         auto node = shared_from_this();
         auto unfound_char_index = 0;
         for (auto i = 0; i < s.length(); ++i) {
@@ -42,6 +40,48 @@ struct Node
     }
 
     vector<string> Find(const string& s) {
+        auto ret = vector<string>();
+
+        auto s_length = s.size();
+        auto node = shared_from_this();
+        auto i = 0;
+        while (node->edges[(int)(s[i])] && i < s_length) {
+            node = node->children[s[i]];
+            ++i;
+        }
+
+        if (i < s_length) {
+            return ret;
+        }
+
+        auto node_stack = stack<shared_ptr<Node>>();
+        node_stack.push(node);
+
+        auto process_node = [&](shared_ptr<Node> node) {
+            if (node->IsLeaf()) {
+                ret.push_back(node->value);
+            } else {
+                node_stack.push(node);
+            }
+        };
+
+        while (!node_stack.empty()) {
+            auto top = node_stack.top();
+            node_stack.pop();
+
+            if (top->is_full_entry) {
+                ret.push_back(top->value);
+            }
+
+            for (auto itr = top->children.begin(); itr != top->children.end(); ++itr) {
+                process_node(itr->second);
+            }
+        }
+
+        return ret;
+    }
+
+    vector<string> Find1(const string& s) {
         auto node = shared_from_this();
         auto i = 0;
         while (node->edges[(int)(s[i])]) {
@@ -113,11 +153,10 @@ struct Node
 
 int main() {
     auto root = make_shared<Node>("");
-    root->Add("f");
-    root->Add("fa");
-    root->Add("far");
+    root->Add("hack");
+    root->Add("hackerrank");
 
-    auto result = root->Find("f");
+    auto result = root->Find("hac");
     for (auto i = 0; i < result.size(); ++i) {
         cout << result[i] << endl;
     }
