@@ -1,0 +1,167 @@
+#include <bitset>
+#include <iostream>
+#include <map>
+#include <memory>
+#include <stack>
+#include <string>
+#include <vector>
+
+using namespace std;
+
+struct Node
+    : enable_shared_from_this<Node>
+{
+
+    using Edges = bitset<128>;
+    using Children = map<char, shared_ptr<Node>>;
+
+    Node(const string& s) : value(s) {}
+
+    void Add(const string& s) {
+        auto s_length = s.length();
+        auto node = shared_from_this();
+        auto unfound_char_index = 0;
+        for (auto i = 0; i < s_length; ++i) {
+            if (node->edges[(int)(s[i])]) {
+                node = node->children[s[i]];
+                if (i == s_length - 1) {
+                    unfound_char_index = s_length;
+                }
+            } else {
+                unfound_char_index = i;
+                break;
+            }
+        }
+        for (auto i = unfound_char_index; i < s.length(); ++i) {
+            auto new_node = make_shared<Node>(node->value + s[i]);
+
+            node->edges.set((int)(s[i]));
+            node->children[s[i]] = new_node;
+            node = new_node;
+        }
+        node->is_full_entry = true;
+    }
+
+    bool CheckIfPrefixed(const string& s) {
+        auto s_length = s.length();
+        auto node = shared_from_this();
+        for (auto i = 0; i < s_length; ++i) {
+            if (node->edges[(int)(s[i])]) {
+                node = node->children[s[i]];
+                if (node->is_full_entry) {
+                    return i != s_length - 1;
+                }
+            }
+        }
+
+        return node->is_full_entry;
+    }
+
+    vector<string> Find(const string& s) {
+        auto ret = vector<string>();
+
+        auto s_length = s.size();
+        auto node = shared_from_this();
+        auto i = 0;
+        while (node->edges[(int)(s[i])] && i < s_length) {
+            node = node->children[s[i]];
+            ++i;
+        }
+
+        if (i < s_length) {
+            return ret;
+        }
+
+        auto node_stack = stack<shared_ptr<Node>>();
+        node_stack.push(node);
+
+        auto process_node = [&](shared_ptr<Node> node) {
+            if (node->IsLeaf()) {
+                ret.push_back(node->value);
+            } else {
+                node_stack.push(node);
+            }
+        };
+
+        while (!node_stack.empty()) {
+            auto top = node_stack.top();
+            node_stack.pop();
+
+            if (top->is_full_entry) {
+                ret.push_back(top->value);
+            }
+
+            for (auto itr = top->children.begin(); itr != top->children.end(); ++itr) {
+                process_node(itr->second);
+            }
+        }
+
+        return ret;
+    }
+
+    bool IsLeaf() {
+        return edges.none();
+    }
+
+    void Display() {
+        auto edges = GetEdgeString();
+        cout << "is_leaf: "       << IsLeaf()      << '\n';
+        cout << "is_full_entry: " << is_full_entry << '\n';
+        cout << "value: "         << value         << '\n';
+        cout << "edges: "         << edges         << '\n';
+        cout << "---------------" << endl;
+
+        for (auto i = 0; i < edges.size(); ++i) {
+            children[edges[i]]->Display();
+        }
+    }
+
+    string GetEdgeString() {
+        auto tmp = edges.to_string();
+        string edges_s;
+        for (auto i = 0; i < tmp.size(); ++i) {
+            if (tmp[i] == '1') {
+                edges_s += char(i);
+            }
+        }
+        return edges_s;;
+    }
+
+    string   value;
+    bool     is_full_entry = false;
+    Edges    edges;
+    Children children;
+};
+
+int main() {
+    string num_inputs;
+
+    cout << "Enter num inputs: ";
+    getline(cin, num_inputs);
+
+    auto inputs = vector<string>();
+    auto root = make_shared<Node>("");
+    for (auto i = 0; i < stoi(num_inputs); ++i) {
+        string input;
+        cout << "Enter input # " << i + 1 << ": ";
+        getline(cin, input);
+        inputs.push_back(input);
+        root->Add(input);
+    }
+
+
+    auto is_prefixed = false;
+    string prefixed_input = "";
+
+    for (auto i = 0; i < inputs.size() && !is_prefixed; ++i) {
+        is_prefixed = root->CheckIfPrefixed(inputs[i]);
+        if (is_prefixed) {
+            prefixed_input = inputs[i];
+        }
+    }
+
+    auto output = is_prefixed ? "BAD SET\n" + prefixed_input : "GOOD SET";
+    cout << output << endl;
+
+    return 0;
+}
