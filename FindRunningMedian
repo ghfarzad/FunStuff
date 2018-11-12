@@ -1,0 +1,50 @@
+// Given an input stream of  integers, you must perform the following task for each  integer:
+// Add the  integer to a running list of integers.
+// Find the median of the updated list (i.e., for the first element through the  element).
+// Print the list's updated median on a new line. The printed value must be a double-precision number scaled to  decimal place (i.e., format).
+
+vector<double> FindRunningMedian(vector<int> a) {
+    vector<double> ret;
+
+    auto min_heap = priority_queue<int, vector<int>, greater<int>>();
+    auto max_heap = priority_queue<int>();
+
+    double median;
+    for (auto i = 0; i < a.size(); ++i) {
+        if (i == 0) {
+            min_heap.push(a[0]);
+            median = a[0];
+        } 
+        else if (a[i] >= min_heap.top()) {
+            min_heap.push(a[i]);
+            if (min_heap.size() > max_heap.size()) {
+                median = min_heap.top();
+                max_heap.push(median);
+                min_heap.pop();
+            }
+        } else {
+            max_heap.push(a[i]);
+            if (max_heap.size() > min_heap.size()) {
+                median = max_heap.top();
+                min_heap.push(median);
+                max_heap.pop();
+            }
+        }
+
+        cout << "i: " << i << endl;
+        if ((i + 1) % 2 == 0) {
+            cout << "min_heap.top(): " << min_heap.top() << endl;
+            cout << "max_heap.top(): " << max_heap.top() << endl;
+            median = (min_heap.top() + max_heap.top()) / 2.0;
+            cout << "median: " << median << endl;
+            ret.push_back(median);
+        } else {
+            cout << "median: " << median * 1.0 << endl;
+            ret.push_back(median * 1.0);
+        }
+
+        cout << "--------" << endl;
+    }
+
+    return ret;
+}
